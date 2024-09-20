@@ -107,3 +107,8 @@ class SubscriptionSerializers(ModelSerializer):
             instance.end_date = end_date
 
         return super().update(instance, validated_data)
+
+class PaymentSerializers(ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'booking', 'subscription', 'amount', 'payment_method', 'payment_status', 'payment_note']
