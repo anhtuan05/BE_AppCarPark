@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-oa!kj$(j%f=*$syf&rc@jlgvys&h=@2m&wl-z!lrnbc*(w$qpg
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['anhtuan05.pythonanywhere.com']
 
 # Application definition
 
@@ -79,10 +79,10 @@ WSGI_APPLICATION = 'carpark.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'lab_green_car_park',
-        'USER': 'root',
-        'PASSWORD': '12345678',
-        'HOST': ''
+        'NAME': 'anhtuan05$lab_green_car_park',
+        'USER': 'anhtuan05',
+        'PASSWORD': 'admin@123',
+        'HOST': 'anhtuan05.mysql.pythonanywhere-services.com'
     }
 }
 
@@ -130,6 +130,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+import os
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -142,11 +144,10 @@ import cloudinary
 cloudinary.config(
     cloud_name="dcezhzozn",
     api_key="342611522918498",
-    api_secret="27wSws5sGd4sMAkutPAT9YH5EgA"
+    api_secret="27wSws5sGd4sMAkutPAT9YH5EgA",
+    api_proxy = "http://proxy.server:3128",
 )
 
-Client_id = "8HcIMo4wm0xr5jDbEMjxnY99dud6uQy1way07FD0"
-Client_secret = "BWKVnrUZ6cgW3aJK3x9ok8dE3vNX6RjIXmCRseLzfX0BWFox3WoVCDl8Io6yNgIfNuITwSiR6IIa4S8qMrnOjKSkFlPoGC61cUQX5jms06eg8d4CDBLdzA6X5hpwsytE"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_SSL = True
