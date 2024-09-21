@@ -56,7 +56,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
                 print(f"Error calculating distance: {e}")
                 continue
 
-            if dist < 0.6:
+            if dist < 0.4:
                 matching_user = user
                 break
 
