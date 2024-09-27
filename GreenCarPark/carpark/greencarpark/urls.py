@@ -10,6 +10,8 @@ router.register('user', UserViewSet)
 router.register('vehicle', VehicleViewSet)
 router.register('booking', BookingViewSet)
 router.register('subscription', SubscriptionViewSet)
+router.register('parkinglot', ParkingLotViewSet)
+router.register('parkingspot', ParkingSpotViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

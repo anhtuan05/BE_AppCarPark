@@ -412,3 +412,19 @@ class SubscriptionViewSet(viewsets.ViewSet, generics.ListAPIView, generics.Creat
             return current_end_date + timedelta(days=90)
         # Thêm các loại đăng ký khác nếu cần
         return current_end_date
+
+
+class ParkingLotViewSet(viewsets.ViewSet, generics.ListAPIView):
+    queryset = ParkingLot.objects.all()
+    serializer_class = ParkingLotSerializers
+
+    def get_permissions(self):
+        return [permissions.AllowAny()]
+
+
+class ParkingSpotViewSet(viewsets.ViewSet, generics.ListAPIView):
+    queryset = ParkingSpot.objects.all()
+    serializer_class = ParkingSpotSerializers
+
+    def get_permissions(self):
+        return [permissions.AllowAny()]

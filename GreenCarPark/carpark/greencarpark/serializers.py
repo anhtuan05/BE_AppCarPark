@@ -108,7 +108,20 @@ class SubscriptionSerializers(ModelSerializer):
 
         return super().update(instance, validated_data)
 
+
+# no router now
 class PaymentSerializers(ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'booking', 'subscription', 'amount', 'payment_method', 'payment_status', 'payment_note']
+
+
+class ParkingLotSerializers(ModelSerializer):
+    class Meta:
+        model = ParkingLot
+        fields = ['id', 'name', 'address', 'price_per_hour']
+
+class ParkingSpotSerializers(ModelSerializer):
+    class Meta:
+        model = ParkingSpot
+        fields = ['id', 'parkinglot', 'status']
