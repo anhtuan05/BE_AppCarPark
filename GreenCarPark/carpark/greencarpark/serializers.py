@@ -125,3 +125,8 @@ class ParkingSpotSerializers(ModelSerializer):
     class Meta:
         model = ParkingSpot
         fields = ['id', 'parkinglot', 'status']
+
+class SubscriptionTypeSerializers(ModelSerializer):
+    class Meta:
+        model = SubscriptionType
+        fields = ['id', 'type', 'total_amount']
