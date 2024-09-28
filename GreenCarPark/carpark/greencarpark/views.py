@@ -428,3 +428,11 @@ class ParkingSpotViewSet(viewsets.ViewSet, generics.ListAPIView):
 
     def get_permissions(self):
         return [permissions.AllowAny()]
+
+
+class SubscriptionTypeViewSet(viewsets.ViewSet, generics.ListAPIView):
+    queryset = SubscriptionType.objects.all()
+    serializer_class = SubscriptionTypeSerializers
+
+    def get_permissions(self):
+        return [permissions.AllowAny()]
