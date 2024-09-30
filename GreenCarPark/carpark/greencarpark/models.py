@@ -133,7 +133,7 @@ class ParkingHistory(models.Model):
     subscription = models.ForeignKey('Subscription', on_delete=models.CASCADE, null=True, blank=True,
                                      related_name="history_sub")
     entry_time = models.DateTimeField(auto_now_add=True, null=False, blank=False)
-    exit_time = models.DateTimeField(auto_now=True, null=True, blank=True)
+    exit_time = models.DateTimeField(null=True, blank=True)
     entry_image = CloudinaryField(null=False, blank=False)
     exit_image = CloudinaryField(null=True, blank=True)
 
