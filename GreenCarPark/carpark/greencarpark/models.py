@@ -135,7 +135,7 @@ class ParkingHistory(models.Model):
     entry_time = models.DateTimeField(auto_now_add=True, null=False, blank=False)
     exit_time = models.DateTimeField(auto_now=True, null=True, blank=True)
     entry_image = CloudinaryField(null=False, blank=False)
-    exit_image = CloudinaryField(null=False, blank=False)
+    exit_image = CloudinaryField(null=True, blank=True)
 
     def __str__(self):
         return f"({self.user} - {self.vehicle} - {self.spot})"
