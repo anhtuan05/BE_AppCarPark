@@ -38,7 +38,7 @@ class ParkingLot(BaseModel):
     price_per_hour = models.FloatField(null=False, blank=False)
 
     def __str__(self):
-        return f"({self.name} - {self.address} - {self.price_per_hour})"
+        return f"({self.name})"
 
 
 class ParkingSpot(BaseModel):
@@ -52,7 +52,7 @@ class ParkingSpot(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
 
     def __str__(self):
-        return f"({self.id} - {self.parkinglot.name} - {self.parkinglot.address} - {self.status})"
+        return f"({self.id} - {self.parkinglot.name} - {self.status})"
 
 
 class Vehicle(BaseModel):
@@ -66,7 +66,7 @@ class Vehicle(BaseModel):
         pass
 
     def __str__(self):
-        return f"({self.user} - {self.brand} - {self.license_plate})"
+        return f"({self.license_plate})"
 
 
 class Subscription(BaseModel):
@@ -90,7 +90,7 @@ class SubscriptionType(BaseModel):
     total_amount = models.FloatField(null=False, blank=False)
 
     def __str__(self):
-        return f"({self.type} - {self.total_amount})"
+        return f"({self.type})"
 
 
 class Booking(BaseModel):
@@ -134,11 +134,11 @@ class ParkingHistory(models.Model):
                                      related_name="history_sub")
     entry_time = models.DateTimeField(auto_now_add=True, null=False, blank=False)
     exit_time = models.DateTimeField(null=True, blank=True)
-    entry_image = CloudinaryField(null=False, blank=False)
+    entry_image = CloudinaryField(null=True, blank=True)
     exit_image = CloudinaryField(null=True, blank=True)
 
     def __str__(self):
-        return f"({self.user} - {self.vehicle} - {self.spot})"
+        return f"({self.vehicle} - {self.spot})"
 
 
 class Complaint(BaseModel):
