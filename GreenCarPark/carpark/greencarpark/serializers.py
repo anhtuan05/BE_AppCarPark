@@ -121,12 +121,31 @@ class ParkingLotSerializers(ModelSerializer):
         model = ParkingLot
         fields = ['id', 'name', 'address', 'price_per_hour']
 
+
 class ParkingSpotSerializers(ModelSerializer):
     class Meta:
         model = ParkingSpot
         fields = ['id', 'parkinglot', 'status']
 
+
 class SubscriptionTypeSerializers(ModelSerializer):
     class Meta:
         model = SubscriptionType
         fields = ['id', 'type', 'total_amount']
+
+
+class ParkingHistorySerializers(ModelSerializer):
+    entry_image_url = serializers.SerializerMethodField()
+    exit_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ParkingHistory
+        fields = ['id', 'user', 'spot', 'vehicle', 'booking', 'subscription', 'entry_time', 'exit_time',
+                  'entry_image_url', 'exit_image_url']
+        read_only_fields = ['user', 'spot', 'vehicle', 'booking', 'subscription', 'entry_time', 'exit_time']
+
+    def get_entry_image_url(self, obj):
+        return obj.entry_image.url if obj.entry_image else None
+
+    def get_exit_image_url(self, obj):
+        return obj.exit_image.url if obj.exit_image else None
