@@ -16,9 +16,11 @@ import ast
 import numpy as np
 import secrets
 from .momo_payment import create_momo_payment
+from .permission import HasParkingHistoryScope, DenyParkingHistoryScope
 
 from .serializers import *
 from rest_framework import viewsets, generics, permissions, status
+from .models import *
 
 
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIView):
@@ -28,7 +30,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
     def get_permissions(self):
         if self.action in ['login_with_face', 'create']:
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
 
     @action(detail=False, methods=['post'], url_path='login-with-face')
     def login_with_face(self, request):
@@ -70,7 +72,8 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
         return Response({
             "access_token": token.token,
             "expires_in": oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS,
-            "token_type": "Bearer"
+            "token_type": "Bearer",
+            "scope": token.scope
         })
 
     def generate_access_token(self, user, application):
@@ -82,7 +85,8 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
             user=user,
             application=application,
             expires=expires,
-            token=secrets.token_urlsafe(32)  # Tạo chuỗi ngẫu nhiên cho token
+            token=secrets.token_urlsafe(30),  # Tạo chuỗi ngẫu nhiên cho token
+            scope='parking_history'
         )
 
         # # (Tùy chọn) Tạo refresh token nếu cần
@@ -162,8 +166,8 @@ class VehicleViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
+            return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+        return [permissions.AllowAny(), DenyParkingHistoryScope()]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -192,8 +196,8 @@ class BookingViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
 
     def get_permissions(self):
         if self.action in ['list', 'create']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated()]
+            return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+        return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -279,8 +283,8 @@ class SubscriptionViewSet(viewsets.ViewSet, generics.ListAPIView, generics.Creat
 
     def get_permissions(self):
         if self.action in ['list', 'create']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated()]
+            return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+        return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -310,8 +314,6 @@ class SubscriptionViewSet(viewsets.ViewSet, generics.ListAPIView, generics.Creat
         momo_response = create_momo_payment(
             amount=amount
         )
-
-        print(momo_response)
 
         if isinstance(momo_response, dict):
             if momo_response.get('resultCode') == 0:
@@ -419,7 +421,7 @@ class ParkingLotViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = ParkingLotSerializers
 
     def get_permissions(self):
-        return [permissions.AllowAny()]
+        return [permissions.AllowAny(), DenyParkingHistoryScope()]
 
 
 class ParkingSpotViewSet(viewsets.ViewSet, generics.ListAPIView):
@@ -427,7 +429,7 @@ class ParkingSpotViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = ParkingSpotSerializers
 
     def get_permissions(self):
-        return [permissions.AllowAny()]
+        return [permissions.AllowAny(), DenyParkingHistoryScope()]
 
 
 class SubscriptionTypeViewSet(viewsets.ViewSet, generics.ListAPIView):
@@ -435,4 +437,269 @@ class SubscriptionTypeViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = SubscriptionTypeSerializers
 
     def get_permissions(self):
-        return [permissions.AllowAny()]
+        return [permissions.AllowAny(), DenyParkingHistoryScope()]
+
+
+class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.ListAPIView, generics.UpdateAPIView):
+    queryset = ParkingHistory.objects.all()
+    serializer_class = ParkingHistorySerializers
+
+    def get_permissions(self):
+        return [HasParkingHistoryScope(), permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            return ParkingHistory.objects.filter(user=user)
+        return ParkingHistory.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        license_plate = self.request.data.get('license_plate')
+        entry_image = self.request.data.get('entry_image')
+
+        if entry_image is None:
+            raise ValidationError({"error": "Entry image is required."})
+
+        try:
+            vehicle = Vehicle.objects.get(user=user, license_plate=license_plate)
+        except Vehicle.DoesNotExist:
+            raise ValidationError({"error": "License plate not found for this user"})
+
+        subscription = Subscription.objects.filter(
+            user=user,
+            status='available',
+            start_date__lte=datetime.now().date(),
+            end_date__gte=datetime.now().date()
+        ).first()
+
+        if subscription:
+            spot = subscription.spot
+            spot.status = 'in_use'
+            spot.save()
+
+            serializer.save(
+                user=user,
+                spot=spot,
+                vehicle=vehicle,
+                subscription=subscription,
+                entry_image=entry_image,
+                exit_time=None
+            )
+            content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã vào bãi"
+                       f"\nĐịa chỉ: {spot.parkinglot.address}"
+                       f"\nChỗ đỗ: {spot.id}"
+                       f"\nThời gian vào: {datetime.now()}"
+                       f"\nThời gian hết hạn đăng ký: {subscription.end_date}")
+
+            send_mail(
+                subject="Xe đã vào bãi tại Green Car Park",
+                message=content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[subscription.user.email],
+                fail_silently=False,
+            )
+            return
+        else:
+            booking = Booking.objects.filter(
+                user=user,
+                vehicle=vehicle,
+                start_time__lte=datetime.now(),
+                end_time__gte=datetime.now(),
+                status='available'
+            ).first()
+
+            if booking:
+                spot = booking.spot
+                spot.status = 'in_use'
+                spot.save()
+
+                booking.status = 'in_use'
+                booking.save()
+
+                serializer.save(
+                    user=user,
+                    spot=spot,
+                    vehicle=vehicle,
+                    booking=booking,
+                    entry_image=entry_image
+                )
+                content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã vào bãi"
+                           f"\nĐịa chỉ: {spot.parkinglot.address}"
+                           f"\nChỗ đỗ: {spot.id}"
+                           f"\nThời gian vào: {datetime.now()}"
+                           f"\nThời gian ra dự kiến: {booking.end_time}")
+
+                send_mail(
+                    subject="Xe đã vào bãi tại Green Car Park",
+                    message=content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[booking.user.email],
+                    fail_silently=False,
+                )
+                return
+
+        raise ValidationError({"error": "No valid Subscription or Booking found"})
+
+    def update(self, request, *args, **kwargs):
+        user = self.request.user
+        license_plate = self.request.data.get('license_plate')
+        exit_image = self.request.data.get('exit_image')
+
+        if exit_image is None:
+            raise ValidationError({"error": "Exit image is required."})
+
+        try:
+            vehicle = Vehicle.objects.get(user=user, license_plate=license_plate)
+        except Vehicle.DoesNotExist:
+            raise ValidationError({"error": "License plate not found for this user."})
+
+        parking_history = ParkingHistory.objects.filter(
+            user=user,
+            vehicle=vehicle,
+            exit_time__isnull=True,
+            exit_image__isnull=True
+        ).first()
+
+        if not parking_history:
+            raise ValidationError({"error": "No active parking history found for this vehicle."})
+
+        if parking_history.subscription:
+            subscription = parking_history.subscription
+            if subscription.start_date <= datetime.now().date() <= subscription.end_date:
+                spot = parking_history.spot
+                spot.status = 'reserved'
+                spot.save()
+            else:
+                exit_time = datetime.now()
+                end_time = datetime.combine(subscription.end_date, datetime.min.time())
+                duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
+                penalty_amount = (int)(self.calculate_penalty(duration))
+                spot = parking_history.spot
+                spot.status = 'available'
+                spot.save()
+
+                subscription.status = 'cancel'
+                subscription.save()
+
+                if penalty_amount > 0:
+                    payment = Payment.objects.create(
+                        subscription=subscription,
+                        amount=penalty_amount,
+                        payment_method='MoMo',
+                        payment_status=False,
+                    )
+                    payment.save()
+
+                    momo_response = create_momo_payment(penalty_amount)
+                    if isinstance(momo_response, dict):
+                        if momo_response.get('resultCode') == 0:
+                            short_link = momo_response.get('payUrl')
+
+                            content = (
+                                f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã ĐỖ QUÁ GIỜ"
+                                f"\nĐịa chỉ: {parking_history.spot.parkinglot.address}"
+                                f"\nChỗ đỗ: {parking_history.spot.id}"
+                                f"\nHÓA ĐƠN: {short_link}")
+
+                            send_mail(
+                                subject="BẠN BỊ PHẠT DO QUÁ GIỜ",
+                                message=content,
+                                from_email=settings.DEFAULT_FROM_EMAIL,
+                                recipient_list=[subscription.user.email],
+                                fail_silently=False,
+                            )
+
+                            payment.payment_status = True
+                            payment.payment_note = "penalty_payment"
+                            payment.save()
+
+        else:
+            if parking_history.booking:
+                booking = parking_history.booking
+                if booking.start_time.replace(tzinfo=None) <= datetime.now() <= booking.end_time.replace(tzinfo=None):
+                    spot = parking_history.spot
+                    spot.status = 'available'
+                    spot.save()
+
+                    booking.status = 'disabled'
+                    booking.save()
+                else:
+                    spot = booking.spot
+                    spot.status = 'available'
+                    spot.save()
+
+                    booking.status = 'disabled'
+                    booking.save()
+
+                    exit_time = datetime.now()
+                    end_time = booking.end_time
+                    duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
+                    penalty_amount = (int)(self.calculate_penalty(duration))
+
+                    if penalty_amount > 0:
+                        payment = Payment.objects.create(
+                            booking=booking,
+                            amount=penalty_amount,
+                            payment_method='MoMo',
+                            payment_status=False,
+                        )
+                        payment.save()
+
+                        momo_response = create_momo_payment(penalty_amount)
+                        if isinstance(momo_response, dict):
+                            if momo_response.get('resultCode') == 0:
+                                short_link = momo_response.get('payUrl')
+
+                                content = (
+                                    f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã ĐỖ QUÁ GIỜ"
+                                    f"\nĐịa chỉ: {parking_history.spot.parkinglot.address}"
+                                    f"\nChỗ đỗ: {parking_history.spot.id}"
+                                    f"\nHÓA ĐƠN: {short_link}")
+
+                                send_mail(
+                                    subject="BẠN BỊ PHẠT DO QUÁ GIỜ",
+                                    message=content,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    recipient_list=[booking.user.email],
+                                    fail_silently=False,
+                                )
+
+                                payment.payment_status = True
+                                payment.payment_note = "penalty_payment"
+                                payment.save()
+
+        parking_history.exit_image = exit_image
+        parking_history.exit_time = datetime.now()
+        parking_history.save()
+
+        content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã ra bãi"
+                   f"\nĐịa chỉ: {parking_history.spot.parkinglot.address}"
+                   f"\nChỗ đỗ: {parking_history.spot.id}"
+                   f"\nThời gian: {datetime.now()}")
+
+        send_mail(
+            subject="Xe đã ra bãi tại Green Car Park",
+            message=content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[parking_history.user.email],
+            fail_silently=False,
+        )
+
+        return Response({"success": "Parking history updated successfully."})
+
+    def calculate_penalty(self, duration):
+        total_minutes = duration.total_seconds() / 60
+        if total_minutes <= 15:
+            return 0  # Free for the first 15 minutes
+        elif 15 < total_minutes <= 120:  # 1-2 hours
+            return 50000
+        elif 120 < total_minutes <= 240:  # 2-4 hours
+            return 100000
+        elif 240 < total_minutes <= 480:  # 4-8 hours
+            return 200000
+        elif 480 < total_minutes <= 480 * 2:  # 8 hours
+            return 500000
+        else:  # Over 8 hours
+            excess_hours = (total_minutes - 480) / 60
+            return 500000 + (excess_hours * 70000)

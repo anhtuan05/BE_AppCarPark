@@ -13,6 +13,7 @@ router.register('subscription', SubscriptionViewSet)
 router.register('parkinglot', ParkingLotViewSet)
 router.register('parkingspot', ParkingSpotViewSet)
 router.register('subscription-type', SubscriptionTypeViewSet)
+router.register('parking-history', ParkingHistoryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
