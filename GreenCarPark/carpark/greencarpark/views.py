@@ -503,19 +503,21 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
             spot = available_subscription.spot
             spot.status = 'in_use'
             spot.save()
+            current_time = datetime.now(local_tz)
 
             serializer.save(
                 user=user,
                 spot=spot,
                 vehicle=vehicle,
                 subscription=available_subscription,
+                entry_time=current_time.replace(tzinfo=None),
                 entry_image=entry_image,
                 exit_time=None
             )
             content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã vào bãi"
                        f"\nĐịa chỉ: {spot.parkinglot.address}"
                        f"\nChỗ đỗ: {spot.id}"
-                       f"\nThời gian vào: {datetime.now()}"
+                       f"\nThời gian vào: {current_time.replace(tzinfo=None)}"
                        f"\nThời gian hết hạn đăng ký: {available_subscription.end_date}")
 
             send_mail(
@@ -550,12 +552,13 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                     spot=spot,
                     vehicle=vehicle,
                     booking=booking,
+                    entry_time=current_time.replace(tzinfo=None),
                     entry_image=entry_image
                 )
                 content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã vào bãi"
                            f"\nĐịa chỉ: {spot.parkinglot.address}"
                            f"\nChỗ đỗ: {spot.id}"
-                           f"\nThời gian vào: {datetime.now()}"
+                           f"\nThời gian vào: {current_time.replace(tzinfo=None)}"
                            f"\nThời gian ra dự kiến: {booking.end_time}")
 
                 send_mail(
@@ -574,6 +577,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         license_plate = self.request.data.get('license_plate')
         exit_image = self.request.data.get('exit_image')
         local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+        current_time = datetime.now(local_tz)
 
         if exit_image is None:
             raise ValidationError({"error": "Exit image is required."})
@@ -600,7 +604,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                 spot.status = 'reserved'
                 spot.save()
             else:
-                exit_time = datetime.now(local_tz)
+                exit_time = current_time
                 end_time = datetime.combine(subscription.end_date, datetime.min.time())
                 duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
                 penalty_amount = (int)(self.calculate_penalty(duration))
@@ -646,7 +650,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         else:
             if parking_history.booking:
                 booking = parking_history.booking
-                if booking.start_time.replace(tzinfo=None) <= datetime.now(local_tz).replace(
+                if booking.start_time.replace(tzinfo=None) <= current_time.replace(
                         tzinfo=None) <= booking.end_time.replace(tzinfo=None):
                     spot = parking_history.spot
                     spot.status = 'available'
@@ -662,7 +666,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                     booking.status = 'disabled'
                     booking.save()
 
-                    exit_time = datetime.now(local_tz)
+                    exit_time = current_time
                     end_time = booking.end_time
                     duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
                     penalty_amount = (int)(self.calculate_penalty(duration))
@@ -700,13 +704,13 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                                 payment.save()
 
         parking_history.exit_image = exit_image
-        parking_history.exit_time = datetime.now()
+        parking_history.exit_time = current_time.replace(tzinfo=None)
         parking_history.save()
 
         content = (f"{user.first_name} {user.last_name} ơi! Xe {vehicle.license_plate} của bạn đã ra bãi"
                    f"\nĐịa chỉ: {parking_history.spot.parkinglot.address}"
                    f"\nChỗ đỗ: {parking_history.spot.id}"
-                   f"\nThời gian: {datetime.now()}")
+                   f"\nThời gian: {current_time.replace(tzinfo=None)}")
 
         send_mail(
             subject="Xe đã ra bãi tại Green Car Park",
