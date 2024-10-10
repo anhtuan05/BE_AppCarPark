@@ -573,6 +573,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         user = self.request.user
         license_plate = self.request.data.get('license_plate')
         exit_image = self.request.data.get('exit_image')
+        local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
 
         if exit_image is None:
             raise ValidationError({"error": "Exit image is required."})
@@ -599,7 +600,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                 spot.status = 'reserved'
                 spot.save()
             else:
-                exit_time = datetime.now()
+                exit_time = datetime.now(local_tz)
                 end_time = datetime.combine(subscription.end_date, datetime.min.time())
                 duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
                 penalty_amount = (int)(self.calculate_penalty(duration))
@@ -645,7 +646,8 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         else:
             if parking_history.booking:
                 booking = parking_history.booking
-                if booking.start_time.replace(tzinfo=None) <= datetime.now() <= booking.end_time.replace(tzinfo=None):
+                if booking.start_time.replace(tzinfo=None) <= datetime.now(local_tz).replace(
+                        tzinfo=None) <= booking.end_time.replace(tzinfo=None):
                     spot = parking_history.spot
                     spot.status = 'available'
                     spot.save()
@@ -660,7 +662,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                     booking.status = 'disabled'
                     booking.save()
 
-                    exit_time = datetime.now()
+                    exit_time = datetime.now(local_tz)
                     end_time = booking.end_time
                     duration = exit_time.replace(tzinfo=None) - end_time.replace(tzinfo=None)
                     penalty_amount = (int)(self.calculate_penalty(duration))
