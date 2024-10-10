@@ -202,6 +202,21 @@ class BookingViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
     def perform_create(self, serializer):
         user = self.request.user
 
+        current_time = datetime.now()
+
+        start_time = serializer.validated_data['start_time']
+        end_time = serializer.validated_data['end_time']
+        if start_time.tzinfo is not None:
+            start_time = start_time.replace(tzinfo=None)
+        if end_time.tzinfo is not None:
+            end_time = end_time.replace(tzinfo=None)
+        if start_time < current_time:
+            raise ValidationError("Start time cannot be in the past.")
+        elif start_time > current_time + timedelta(hours=5):
+            raise ValidationError("Start time cannot be more than 5 hours from now.")
+        if end_time < start_time + timedelta(hours=1):
+            raise ValidationError("The end time must be at least 1 hour greater than the start time.")
+
         spot = serializer.validated_data['spot']
         vehicle = serializer.validated_data['vehicle']
 
@@ -471,10 +486,17 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
             status='available',
             start_date__lte=datetime.now().date(),
             end_date__gte=datetime.now().date()
-        ).first()
+        )
 
-        if subscription:
-            spot = subscription.spot
+        available_subscription = None
+
+        for sub in subscription:
+            if sub.spot.status == 'reserved':
+                available_subscription = sub
+                break
+
+        if available_subscription:
+            spot = available_subscription.spot
             spot.status = 'in_use'
             spot.save()
 
@@ -482,7 +504,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                 user=user,
                 spot=spot,
                 vehicle=vehicle,
-                subscription=subscription,
+                subscription=available_subscription,
                 entry_image=entry_image,
                 exit_time=None
             )
@@ -490,13 +512,13 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
                        f"\nĐịa chỉ: {spot.parkinglot.address}"
                        f"\nChỗ đỗ: {spot.id}"
                        f"\nThời gian vào: {datetime.now()}"
-                       f"\nThời gian hết hạn đăng ký: {subscription.end_date}")
+                       f"\nThời gian hết hạn đăng ký: {available_subscription.end_date}")
 
             send_mail(
                 subject="Xe đã vào bãi tại Green Car Park",
                 message=content,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[subscription.user.email],
+                recipient_list=[available_subscription.user.email],
                 fail_silently=False,
             )
             return
