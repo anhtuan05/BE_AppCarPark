@@ -1,8 +1,9 @@
-from django.core.exceptions import ValidationError
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
 from django.core.validators import MinValueValidator, MaxValueValidator
+from rest_framework.exceptions import ValidationError
 
 
 class BaseModel(models.Model):
@@ -137,7 +138,7 @@ class ParkingHistory(models.Model):
                                 related_name="history_booking")
     subscription = models.ForeignKey('Subscription', on_delete=models.CASCADE, null=True, blank=True,
                                      related_name="history_sub")
-    entry_time = models.DateTimeField(auto_now_add=True, null=False, blank=False)
+    entry_time = models.DateTimeField(null=False, blank=False)
     exit_time = models.DateTimeField(null=True, blank=True)
     entry_image = CloudinaryField(null=True, blank=True)
     exit_image = CloudinaryField(null=True, blank=True)
