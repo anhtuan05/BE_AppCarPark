@@ -475,6 +475,7 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         user = self.request.user
         license_plate = self.request.data.get('license_plate')
         entry_image = self.request.data.get('entry_image')
+        local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
 
         if entry_image is None:
             raise ValidationError({"error": "Entry image is required."})
@@ -526,11 +527,13 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
             )
             return
         else:
+            current_time = datetime.now(local_tz)
+            current_time_naive = current_time.replace(tzinfo=None)
             booking = Booking.objects.filter(
                 user=user,
                 vehicle=vehicle,
-                start_time__lte=datetime.now(),
-                end_time__gte=datetime.now(),
+                start_time__lte=current_time_naive,
+                end_time__gte=current_time_naive,
                 status='available'
             ).first()
 
