@@ -1,4 +1,4 @@
-
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
@@ -53,6 +53,11 @@ class ParkingSpot(BaseModel):
 
     def __str__(self):
         return f"({self.id} - {self.parkinglot.name} - {self.status})"
+
+    def delete(self, *args, **kwargs):
+        if self.status in ['reserved', 'in_use']:
+            raise ValidationError(f"Cannot delete ParkingSpot with status '{self.status}'.")
+        super().delete(*args, **kwargs)
 
 
 class Vehicle(BaseModel):
