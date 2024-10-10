@@ -1,3 +1,4 @@
+import pytz
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -202,10 +203,12 @@ class BookingViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
     def perform_create(self, serializer):
         user = self.request.user
 
-        current_time = datetime.now()
-
+        local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+        current_time = datetime.now(local_tz)
         start_time = serializer.validated_data['start_time']
         end_time = serializer.validated_data['end_time']
+        if current_time.tzinfo is not None:
+            current_time = current_time.replace(tzinfo=None)
         if start_time.tzinfo is not None:
             start_time = start_time.replace(tzinfo=None)
         if end_time.tzinfo is not None:
