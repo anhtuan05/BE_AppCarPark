@@ -59,10 +59,18 @@ class ParkingHistoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'spot', 'vehicle', 'booking', 'subscription', 'entry_time', 'exit_time')
 
 
+class ReviewsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'parkinglot', 'comment', 'rate')
+
+
+class ComplaintAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'parking_history', 'description', 'status', 'resolved_at')
+
+
 car_park_admin_site = AdminSiteCarPark(name='car_park_admin')
 
 car_park_admin_site.register(User, CustomUserAdmin)
-car_park_admin_site.register(Reviews)
+car_park_admin_site.register(Reviews, ReviewsAdmin)
 car_park_admin_site.register(ParkingLot, ParkingLotAdmin)
 car_park_admin_site.register(ParkingSpot, ParkingSpotAdmin)
 car_park_admin_site.register(Vehicle, VehicleAdmin)
@@ -71,4 +79,4 @@ car_park_admin_site.register(SubscriptionType, SubscriptionTypeAdmin)
 car_park_admin_site.register(Booking, BookingAdmin)
 car_park_admin_site.register(Payment, PaymentAdmin)
 car_park_admin_site.register(ParkingHistory, ParkingHistoryAdmin)
-car_park_admin_site.register(Complaint)
+car_park_admin_site.register(Complaint, ComplaintAdmin)

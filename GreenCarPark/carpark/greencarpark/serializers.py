@@ -149,3 +149,16 @@ class ParkingHistorySerializers(ModelSerializer):
 
     def get_exit_image_url(self, obj):
         return obj.exit_image.url if obj.exit_image else None
+
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Complaint
+        fields = ['id', 'user', 'parking_history', 'description', 'status', 'resolved_at']
+
+
+class ReviewsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reviews
+        fields = ['id', 'user', 'parkinglot', 'comment', 'rate']
+        read_only_fields = ['user']

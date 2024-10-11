@@ -17,7 +17,7 @@ import ast
 import numpy as np
 import secrets
 from .momo_payment import create_momo_payment
-from .permission import HasParkingHistoryScope, DenyParkingHistoryScope
+from .permission import HasParkingHistoryScope, DenyParkingHistoryScope, IsOwnerOrReadOnly
 
 from .serializers import *
 from rest_framework import viewsets, generics, permissions, status
@@ -737,3 +737,41 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
         else:  # Over 8 hours
             excess_hours = (total_minutes - 480) / 60
             return 500000 + (excess_hours * 70000)
+
+
+class ReviewsViewSet(viewsets.ModelViewSet):
+    queryset = Reviews.objects.all()
+    serializer_class = ReviewsSerializer
+
+    def get_permissions(self):
+        return [IsOwnerOrReadOnly(), permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if instance.user != request.user:
+            return Response({"detail": "You do not have permission to modify this review."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.user != request.user:
+            return Response({"detail": "You do not have permission to delete this review."},
+                            status=status.HTTP_403_FORBIDDEN)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ComplaintViewSet(viewsets.ModelViewSet):
+    queryset = Complaint.objects.all()
+    serializer_class = ComplaintSerializer
+    permission_classes = [permissions.IsAuthenticated, DenyParkingHistoryScope()]
