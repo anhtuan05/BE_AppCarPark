@@ -109,17 +109,25 @@ class SubscriptionSerializers(ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# no router now
 class PaymentSerializers(ModelSerializer):
     class Meta:
         model = Payment
         fields = ['id', 'booking', 'subscription', 'amount', 'payment_method', 'payment_status', 'payment_note']
 
 
-class ParkingLotSerializers(ModelSerializer):
+class ParkingLotSerializers(serializers.ModelSerializer):
+    average_rate = serializers.FloatField(read_only=True)
+    total_reviews = serializers.IntegerField(read_only=True)
+    rates_1 = serializers.IntegerField(read_only=True)
+    rates_2 = serializers.IntegerField(read_only=True)
+    rates_3 = serializers.IntegerField(read_only=True)
+    rates_4 = serializers.IntegerField(read_only=True)
+    rates_5 = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = ParkingLot
-        fields = ['id', 'name', 'address', 'price_per_hour']
+        fields = ['id', 'name', 'address', 'price_per_hour', 'average_rate', 'total_reviews', 'rates_1', 'rates_2',
+                  'rates_3', 'rates_4', 'rates_5']
 
 
 class ParkingSpotSerializers(ModelSerializer):

@@ -1,4 +1,5 @@
 import pytz
+from django.db.models import Avg, Count, Q, Sum
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -439,7 +440,24 @@ class ParkingLotViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = ParkingLotSerializers
 
     def get_permissions(self):
+        if self.action == 'ratings':
+            return [permissions.IsAdminUser()]  # superuser
         return [permissions.AllowAny(), DenyParkingHistoryScope()]
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAdminUser])
+    def ratings(self, request):
+        parking_lot_ratings = ParkingLot.objects.annotate(
+            average_rate=Avg('reviews_parkinglot__rate'),
+            total_reviews=Count('reviews_parkinglot'),
+            rates_1=Count('reviews_parkinglot', filter=models.Q(reviews_parkinglot__rate=1)),
+            rates_2=Count('reviews_parkinglot', filter=models.Q(reviews_parkinglot__rate=2)),
+            rates_3=Count('reviews_parkinglot', filter=models.Q(reviews_parkinglot__rate=3)),
+            rates_4=Count('reviews_parkinglot', filter=models.Q(reviews_parkinglot__rate=4)),
+            rates_5=Count('reviews_parkinglot', filter=models.Q(reviews_parkinglot__rate=5)),
+        )
+
+        serializer = ParkingLotSerializers(parking_lot_ratings, many=True)
+        return Response(serializer.data)
 
 
 class ParkingSpotViewSet(viewsets.ViewSet, generics.ListAPIView):
@@ -774,4 +792,31 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class ComplaintViewSet(viewsets.ModelViewSet):
     queryset = Complaint.objects.all()
     serializer_class = ComplaintSerializer
-    permission_classes = [permissions.IsAuthenticated, DenyParkingHistoryScope()]
+    permission_classes = [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+
+
+class PaymentViewSet(viewsets.ViewSet, generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializers
+
+    def get_permissions(self):
+        if self.action == 'revenue_statistics':
+            return [permissions.IsAdminUser()]  # superuser
+        return [permissions.IsAuthenticated(), DenyParkingHistoryScope()]
+
+    def get_queryset(self):
+        return Payment.objects.filter(
+            Q(booking__user=self.request.user) | Q(subscription__user=self.request.user),
+            Q(booking__isnull=True) | Q(subscription__isnull=True)
+        )
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAdminUser])
+    def revenue_statistics(self, request):
+        payments = Payment.objects.filter(payment_status=True)
+        revenue = payments.values('created_date__year', 'created_date__month').annotate(total_amount=Sum('amount'))
+        revenue_by_month = {}
+        for entry in revenue:
+            year_month = f"{entry['created_date__year']}-{entry['created_date__month']:02d}"
+            revenue_by_month[year_month] = entry['total_amount']
+
+        return Response(revenue_by_month, status=status.HTTP_200_OK)
