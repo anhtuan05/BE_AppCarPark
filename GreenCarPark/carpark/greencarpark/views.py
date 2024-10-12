@@ -481,7 +481,10 @@ class ParkingHistoryViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.L
     serializer_class = ParkingHistorySerializers
 
     def get_permissions(self):
-        return [HasParkingHistoryScope(), permissions.IsAuthenticated()]
+        if self.action == 'list':
+            return [permissions.IsAuthenticated()]
+        else:
+            return [HasParkingHistoryScope(), permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
