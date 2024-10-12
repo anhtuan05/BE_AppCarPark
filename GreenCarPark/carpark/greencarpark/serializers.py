@@ -48,10 +48,12 @@ class VehicleSerializer(ModelSerializer):
 class BookingSerializers(ModelSerializer):
     total_hours = serializers.SerializerMethodField()
     short_link = serializers.SerializerMethodField()
+    vehicle_license_plate = serializers.CharField(source='vehicle.license_plate', read_only=True)
 
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'spot', 'vehicle', 'start_time', 'end_time', 'status', 'total_hours', 'short_link']
+        fields = ['id', 'user', 'spot', 'vehicle', 'vehicle_license_plate', 'start_time', 'end_time', 'status',
+                  'total_hours', 'short_link']
         read_only_fields = ['user', 'status']
 
     def get_total_hours(self, obj):
@@ -66,10 +68,12 @@ class BookingSerializers(ModelSerializer):
 
 class SubscriptionSerializers(ModelSerializer):
     short_link = serializers.SerializerMethodField()
+    subscription_type_name = serializers.CharField(source='subscription_type.type', read_only=True)
 
     class Meta:
         model = Subscription
-        fields = ['id', 'user', 'spot', 'subscription_type', 'start_date', 'end_date', 'status', 'short_link']
+        fields = ['id', 'user', 'spot', 'subscription_type', 'subscription_type_name', 'start_date', 'end_date',
+                  'status', 'short_link']
         read_only_fields = ['user', 'start_date', 'end_date']
 
     def get_short_link(self, obj):
