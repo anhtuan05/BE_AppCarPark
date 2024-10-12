@@ -149,10 +149,11 @@ class SubscriptionTypeSerializers(ModelSerializer):
 class ParkingHistorySerializers(ModelSerializer):
     entry_image_url = serializers.SerializerMethodField()
     exit_image_url = serializers.SerializerMethodField()
+    vehicle_license_plate = serializers.CharField(source='vehicle.license_plate', read_only=True)
 
     class Meta:
         model = ParkingHistory
-        fields = ['id', 'user', 'spot', 'vehicle', 'booking', 'subscription', 'entry_time', 'exit_time',
+        fields = ['id', 'user', 'spot', 'vehicle', 'vehicle_license_plate', 'booking', 'subscription', 'entry_time', 'exit_time',
                   'entry_image_url', 'exit_image_url']
         read_only_fields = ['user', 'spot', 'vehicle', 'booking', 'subscription', 'entry_time', 'exit_time']
 
