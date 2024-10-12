@@ -171,7 +171,8 @@ class ComplaintSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
+    parkinglot_name = serializers.CharField(source='parkinglot.name', read_only=True)
     class Meta:
         model = Reviews
-        fields = ['id', 'user', 'parkinglot', 'comment', 'rate']
+        fields = ['id', 'user', 'parkinglot', 'parkinglot_name', 'comment', 'rate']
         read_only_fields = ['user']
