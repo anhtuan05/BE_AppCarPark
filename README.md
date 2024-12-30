@@ -35,9 +35,9 @@ Trước khi bắt đầu, hãy đảm bảo rằng bạn đã cài đặt:
    cd BE_AppCarPark
    
 2. **Tạo môi trường ảo và cài đặt các phụ thuộc**
-    python -m venv venv
-    venv\Scripts\activate           # Trên Windows
-    pip install -r requirements.txt
+    - python -m venv venv
+    - venv\Scripts\activate           # Trên Windows
+    - pip install -r requirements.txt
    
 3. **Cấu hình cơ sở dữ liệu**
    - Tạo một cơ sở dữ liệu MySQL mới, ví dụ: carpark_db.
@@ -54,19 +54,19 @@ Trước khi bắt đầu, hãy đảm bảo rằng bạn đã cài đặt:
     }
    
    - Tạo bảng trong cơ sở dữ liệu:
-       python manage.py makemigrations
-       python manage.py migrate
+       - python manage.py makemigrations
+       - python manage.py migrate
    - Tạo siêu người dùng (superuser):
-       python manage.py createsuperuser
+       - python manage.py createsuperuser
    - Chạy server
-       python manage.py runserver
+       - python manage.py runserver
 
 4. **🌐 Triển khai lên PythonAnywhere**
-    Đăng ký tài khoản tại PythonAnywhere.
-    Tạo một ứng dụng Django mới.
-    Upload mã nguồn dự án lên PythonAnywhere.
-    Cấu hình cơ sở dữ liệu MySQL trên PythonAnywhere.
-    Cấu hình các biến môi trường và kết nối tĩnh (static/media).
+    - Đăng ký tài khoản tại PythonAnywhere.
+    - Tạo một ứng dụng Django mới.
+    - Upload mã nguồn dự án lên PythonAnywhere.
+    - Cấu hình cơ sở dữ liệu MySQL trên PythonAnywhere.
+    - Cấu hình các biến môi trường và kết nối tĩnh (static/media).
 
 5. **📂 Cấu trúc dự án**
    - GreenCarPark/carpark/
