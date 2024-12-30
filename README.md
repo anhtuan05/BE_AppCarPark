@@ -69,19 +69,20 @@ Trước khi bắt đầu, hãy đảm bảo rằng bạn đã cài đặt:
     - Cấu hình các biến môi trường và kết nối tĩnh (static/media).
 
 5. **📂 Cấu trúc dự án**
+   ```bash
    - GreenCarPark/carpark/
      - ├── carpark/
-     - │   ├── settings.py        - # Cấu hình dự án
-     - │   ├── urls.py            - # Định tuyến toàn dự án
-     - ├── greencarpark/          - # Ứng dụng chính
-     - │   ├── models.py          - # Định nghĩa model
-     - │   ├── views.py           - # Định nghĩa logic API
-     - │   ├── serializers.py     - # Serializers cho DRF
-     - │   ├── admin.py           - # adminsite
-     - │   ├── momo_payment.py    - # Tích hợp thanh toán bằng MoMo
-     - │   ├── urls.py            - # Định tuyến ứng dụng
-     - ├── requirements.txt       - # Các thư viện cần thiết
-     - ├── manage.py              - # Lệnh quản lý Django
+     - │   ├── settings.py         # Cấu hình dự án
+     - │   ├── urls.py             # Định tuyến toàn dự án
+     - ├── greencarpark/           # Ứng dụng chính
+     - │   ├── models.py           # Định nghĩa model
+     - │   ├── views.py            # Định nghĩa logic API
+     - │   ├── serializers.py      # Serializers cho DRF
+     - │   ├── admin.py            # adminsite
+     - │   ├── momo_payment.py     # Tích hợp thanh toán bằng MoMo
+     - │   ├── urls.py             # Định tuyến ứng dụng
+     - ├── requirements.txt        # Các thư viện cần thiết
+     - ├── manage.py               # Lệnh quản lý Django
 
 6. **📚 Tài liệu API**
    - URL: https://anhtuan05.pythonanywhere.com/swagger/
