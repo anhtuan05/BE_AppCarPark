@@ -1,0 +1,23 @@
+{
+  "include": [
+    "carpark"
+  ],
+  "extraPaths": [
+    "carpark",
+    "carpark/greencarpark"
+  ],
+  "typeCheckingMode": "off",
+  "reportMissingTypeStubs": "none",
+  "reportMissingImports": "none",
+  "reportUndefinedVariable": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportWildcardImportFromLibrary": "none",
+  "reportUnusedImport": "none",
+  "reportUnusedVariable": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportIncompatibleVariableOverride": "none",
+  "reportIncompatibleMethodOverride": "none"
+}

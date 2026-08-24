@@ -10,21 +10,37 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Tự động nạp các biến môi trường từ file .env nếu có
+_env_file = BASE_DIR / '.env'
+if _env_file.exists():
+    with open(_env_file, 'r', encoding='utf-8') as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _k, _v = _line.split('=', 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-oa!kj$(j%f=*$syf&rc@jlgvys&h=@2m&wl-z!lrnbc*(w$qpg'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-oa!kj$(j%f=*$syf&rc@jlgvys&h=@2m&wl-z!lrnbc*(w$qpg'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['anhtuan05.pythonanywhere.com']
+ALLOWED_HOSTS = [
+    host.strip() for host in os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()
+]
 
 # Application definition
 
@@ -78,23 +94,32 @@ WSGI_APPLICATION = 'carpark.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'anhtuan05$lab_green_car_park',
-        'USER': 'anhtuan05',
-        'PASSWORD': 'admin@123',
-        'HOST': 'anhtuan05.mysql.pythonanywhere-services.com'
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.environ.get('DB_NAME', 'lab_green_car_park'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '12345678'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
+        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '300')),
+        'OPTIONS': {
+            'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'",
+        }
     }
 }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-    )
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,  # Thời gian hết hạn của token
-    'REFRESH_TOKEN_EXPIRE_SECONDS': 1209600,  # Thời gian hết hạn của refresh token
+    'ACCESS_TOKEN_EXPIRE_SECONDS': int(os.environ.get('OAUTH2_ACCESS_TOKEN_EXPIRE_SECONDS', '3600')),
+    'REFRESH_TOKEN_EXPIRE_SECONDS': int(os.environ.get('OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS', '1209600')),
 }
 
 # Password validation
@@ -130,29 +155,66 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-import os
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# cloudinary
+# Cloudinary configuration
 import cloudinary
 
 cloudinary.config(
-    cloud_name="dcezhzozn",
-    api_key="342611522918498",
-    api_secret="27wSws5sGd4sMAkutPAT9YH5EgA",
-    api_proxy = "http://proxy.server:3128",
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dcezhzozn'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY', '484384423661247'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'aabEWlqxKZ3M865G23vYQ6dfbp0')
 )
 
-
+Client_id = os.environ.get('OAUTH2_CLIENT_ID', '8HcIMo4wm0xr5jDbEMjxnY99dud6uQy1way07FD0')
+Client_secret = os.environ.get('OAUTH2_CLIENT_SECRET', 'BWKVnrUZ6cgW3aJK3x9ok8dE3vNX6RjIXmCRseLzfX0BWFox3WoVCDl8Io6yNgIfNuITwSiR6IIa4S8qMrnOjKSkFlPoGC61cUQX5jms06eg8d4CDBLdzA6X5hpwsytE')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_SSL = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 465
-EMAIL_HOST_USER = 'mycarpark020924@gmail.com'
-EMAIL_HOST_PASSWORD = 'pfwsiyqzcvnryiuo'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '465'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mycarpark020924@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'pfwsiyqzcvnryiuo')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+# Logging configuration (Observability)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] [{levelname}] [{name}] {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '[{levelname}] {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': os.environ.get('DB_LOG_LEVEL', 'WARNING'),
+            'propagate': False,
+        },
+        'greencarpark': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
+}

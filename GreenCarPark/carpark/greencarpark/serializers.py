@@ -4,7 +4,19 @@ from dateutil.relativedelta import relativedelta
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from .models import *
+from .models import (
+    User,
+    Vehicle,
+    Booking,
+    Subscription,
+    ParkingLot,
+    ParkingSpot,
+    SubscriptionType,
+    ParkingHistory,
+    Reviews,
+    Complaint,
+    Payment,
+)
 
 
 class UserSerializers(ModelSerializer):
@@ -12,6 +24,7 @@ class UserSerializers(ModelSerializer):
         model = User
         fields = ['id', 'first_name', 'last_name', 'username', 'password', 'email', 'date_of_birth', 'phone_number',
                   'face_description', 'is_active', 'is_staff', 'is_superuser']
+        read_only_fields = ['id', 'is_active', 'is_staff', 'is_superuser']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -57,13 +70,13 @@ class BookingSerializers(ModelSerializer):
         read_only_fields = ['user', 'status']
 
     def get_total_hours(self, obj):
-        # Tính toán số giờ và số tiền dựa trên start_time và end_time
-        time_difference = obj.end_time - obj.start_time
-        total_hours = time_difference.total_seconds() / 3600
-        return total_hours
+        if obj.start_time and obj.end_time:
+            time_difference = obj.end_time - obj.start_time
+            return round(time_difference.total_seconds() / 3600, 2)
+        return 0.0
 
     def get_short_link(self, obj):
-        return obj.short_link if hasattr(obj, 'short_link') else None
+        return getattr(obj, 'short_link', None)
 
 
 class SubscriptionSerializers(ModelSerializer):
@@ -77,17 +90,18 @@ class SubscriptionSerializers(ModelSerializer):
         read_only_fields = ['user', 'start_date', 'end_date']
 
     def get_short_link(self, obj):
-        return obj.short_link if hasattr(obj, 'short_link') else None
+        return getattr(obj, 'short_link', None)
 
     def calculate_end_date(self, subscription_type):
-        start_date = datetime.now().date()
+        from django.utils import timezone
+        start_date = timezone.now().date()
 
         if subscription_type == 'monthly':
             end_date = start_date + relativedelta(months=1)
         elif subscription_type == 'quarterly':
             end_date = start_date + relativedelta(months=3)
         else:
-            raise ValueError("Invalid subscription type")
+            end_date = start_date + relativedelta(months=1)
 
         return start_date, end_date
 
