@@ -2,7 +2,20 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 
-from .views import *
+from .views import (
+    UserViewSet,
+    VehicleViewSet,
+    BookingViewSet,
+    SubscriptionViewSet,
+    ParkingLotViewSet,
+    ParkingSpotViewSet,
+    SubscriptionTypeViewSet,
+    ParkingHistoryViewSet,
+    ReviewsViewSet,
+    ComplaintViewSet,
+    PaymentViewSet,
+    health_check,
+)
 from .admin import car_park_admin_site
 
 router = routers.DefaultRouter()
@@ -18,6 +31,7 @@ router.register('reviews', ReviewsViewSet)
 router.register('complaint', ComplaintViewSet)
 router.register('payment', PaymentViewSet)
 urlpatterns = [
+    path('health/', health_check, name='health_check'),
     path('', include(router.urls)),
     path('admin/', car_park_admin_site.urls),
 ]
